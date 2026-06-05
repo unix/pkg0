@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pkg0",
+  "compatibility_date": "2026-06-05",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "pkg0.witt.im",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "build": {
+    "command": "pnpm run build"
+  }
+}

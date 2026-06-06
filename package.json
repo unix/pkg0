@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "wrangler deploy",
+    "deploy": "pnpm build && wrangler deploy",
     "deploy:dry-run": "wrangler deploy --dry-run"
   },
   "prettier": "@unix/prettier",

@@ -1,6 +1,12 @@
 import { useCallback } from 'react'
 
 import { useAbortableRequest } from '@/hooks/use-abortable-request'
+import {
+  trackPackageSearch,
+  trackPackageSearchError,
+  trackPackageSearchSuccess,
+  trackVersionSelect,
+} from '@/lib/analytics'
 import { CDN_SOURCES, ERROR_MESSAGES, PACKAGE_TYPES } from '@/lib/config'
 import type { CdnSource } from '@/lib/cdn-url'
 import type { FileNode, PackageType } from '@/lib/package-data'
@@ -55,6 +61,11 @@ export const usePackageLoader = ({
     async (type: PackageType, name: string, requestedVersion?: string) => {
       const controller = startRequest('search')
       setActiveTab(type)
+      trackPackageSearch({
+        packageName: name,
+        packageType: type,
+        requestedVersion,
+      })
 
       if (type === PACKAGE_TYPES.github) {
         setSource(CDN_SOURCES.jsdelivr)
@@ -72,6 +83,12 @@ export const usePackageLoader = ({
         requestSelectedVersionScroll()
         setPackageView(type, view)
         syncPackageUrl(type, name, view.selectedVersion)
+        trackPackageSearchSuccess({
+          packageName: name,
+          packageType: type,
+          version: view.selectedVersion,
+          versionCount: view.versionCount,
+        })
         void searchHistory.save({
           query: name,
           type,
@@ -82,11 +99,16 @@ export const usePackageLoader = ({
           return
         }
 
-        setPackageError(
-          type,
-          name,
-          error instanceof Error ? error.message : ERROR_MESSAGES.unknown,
-        )
+        const errorMessage =
+          error instanceof Error ? error.message : ERROR_MESSAGES.unknown
+
+        setPackageError(type, name, errorMessage)
+        trackPackageSearchError({
+          errorMessage,
+          packageName: name,
+          packageType: type,
+          requestedVersion,
+        })
       } finally {
         finishRequest(controller)
       }
@@ -122,6 +144,11 @@ export const usePackageLoader = ({
         .then(files => {
           setVersionFiles(activeTab, version, files)
           syncPackageUrl(activeTab, activePackageView.packageName, version)
+          trackVersionSelect({
+            packageName: activePackageView.packageName,
+            packageType: activeTab,
+            version,
+          })
         })
         .catch(error => {
           if (isAbortError(error)) {

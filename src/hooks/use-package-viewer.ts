@@ -9,6 +9,12 @@ import { usePackageLoader } from '@/hooks/use-package-loader'
 import { usePackageSearchInput } from '@/hooks/use-package-search-input'
 import { usePackageViewerState } from '@/hooks/use-package-viewer-state'
 import { useVersionScroll } from '@/hooks/use-version-scroll'
+import {
+  trackLoadMoreVersions,
+  trackSourceChange,
+  trackTabChange,
+} from '@/lib/analytics'
+import type { CdnSource } from '@/lib/cdn-url'
 import { CDN_SOURCES, PACKAGE_TYPES } from '@/lib/config'
 import type { PackageType } from '@/lib/package-data'
 
@@ -76,11 +82,28 @@ export const usePackageViewer = () => {
   })
 
   const handleLoadMoreVersions = useCallback(() => {
+    if (activePackageView) {
+      trackLoadMoreVersions({
+        packageName: activePackageView.packageName,
+        packageType: activeTab,
+        version: activePackageView.selectedVersion,
+        versionCount: activePackageView.versionCount,
+        visibleVersionCount: activePackageView.visibleVersionCount,
+      })
+    }
+
     loadMoreVersions(activeTab)
-  }, [activeTab, loadMoreVersions])
+  }, [activePackageView, activeTab, loadMoreVersions])
 
   const handleTabChange = useCallback(
     (tab: PackageType) => {
+      if (tab !== activeTab) {
+        trackTabChange({
+          fromPackageType: activeTab,
+          packageType: tab,
+        })
+      }
+
       setActiveTab(tab)
 
       if (tab === PACKAGE_TYPES.github) {
@@ -89,7 +112,23 @@ export const usePackageViewer = () => {
 
       refreshSuggestions(tab, inputValues[tab])
     },
-    [inputValues, refreshSuggestions, setActiveTab, setSource],
+    [activeTab, inputValues, refreshSuggestions, setActiveTab, setSource],
+  )
+
+  const handleSourceChange = useCallback(
+    (nextSource: CdnSource) => {
+      if (nextSource !== source) {
+        trackSourceChange({
+          packageName: activePackageView?.packageName,
+          packageType: activeTab,
+          source: nextSource,
+          version: activePackageView?.selectedVersion,
+        })
+      }
+
+      setSource(nextSource)
+    },
+    [activePackageView, activeTab, setSource, source],
   )
 
   return {
@@ -105,7 +144,7 @@ export const usePackageViewer = () => {
     handleRemoveSuggestion,
     handleSearch,
     handleSelectSuggestion,
-    handleSourceChange: setSource,
+    handleSourceChange,
     handleTabChange,
     handleVersionChange: packageLoader.loadVersion,
     handleVersionsTitleClick: versionScroll.scrollVersionsToTop,

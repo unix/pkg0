@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 
+import { trackFileUrlCopy } from '@/lib/analytics'
 import { PACKAGE_VIEWER_CONFIG } from '@/lib/config'
 import { formatCdnFileUrl, type CdnSource } from '@/lib/cdn-url'
 import type { PackageType } from '@/lib/package-data'
@@ -33,6 +34,13 @@ export const usePackageFileCopy = ({
       })
 
       void navigator.clipboard.writeText(url).then(() => {
+        trackFileUrlCopy({
+          filePath: path,
+          packageName: activePackageView.packageName,
+          packageType: activeTab,
+          source,
+          version: activePackageView.selectedVersion,
+        })
         setCopiedPath(url)
         window.setTimeout(
           () => setCopiedPath(''),

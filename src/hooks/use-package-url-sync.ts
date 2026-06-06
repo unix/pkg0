@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 
+import { trackPageView } from '@/lib/analytics'
 import type { PackageType } from '@/lib/package-data'
 import { formatPackageUrlSearch, parsePackageUrlState } from '@/lib/package-url'
 
@@ -10,11 +11,10 @@ interface UseInitialPackageLoadOptions {
 export const usePackageUrlSync = () => {
   const syncPackageUrl = useCallback(
     (type: PackageType, name: string, version: string) => {
-      window.history.replaceState(
-        null,
-        '',
-        formatPackageUrlSearch(type, name, version),
-      )
+      const search = formatPackageUrlSearch(type, name, version)
+
+      window.history.replaceState(null, '', search)
+      trackPageView()
     },
     [],
   )
